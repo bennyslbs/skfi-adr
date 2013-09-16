@@ -1,0 +1,87 @@
+#+TITLE:	README for skfi-adr
+#+AUTHOR:	Benny Simonsen
+#+EMAIL:	benny@slbs.dk
+#+STARTUP:	content
+
+* Overview
+  :PROPERTIES:
+  :CUSTOM_ID: Overview
+  :END:
+
+  skfi-adr er et lille tool til at få kontaktinformation fra
+  FORÆLDREINTRA © Skolesoft ind i adressekartoteker i mailklienter m.v.
+
+  Input til skfi-adr: Copy paste af diverse klasselister i
+  Forældreintra. Flg. lister bruges:
+  - Navneliste (evt.)
+  - Adresse- og telefonliste
+  - Elevernes e-mailadresser
+  - Elevernes fødselsdage
+  - Kontaktoplysninger
+  - Forældres e-mailadresser
+  - Forældres profilbilleder (evt. - Blot til at få navne på forældre)
+
+  Data gemmes internt på format så forskellige eksport formater er
+  lette at lave.
+
+  Nuværende eksport [[#Formater-Brug][formater]]:
+  - [[#Formater-Brug.vcf-split][vcf-split]] - 4 vcard filer med drenge/piger, forældre t. drenge/piger]
+
+
+* Installation
+  :PROPERTIES:
+  :CUSTOM_ID: Installation
+  :END:
+
+  Download skfi-adr.pl fra file:./skfi-adr.pl
+
+
+*** Afhængigheder
+    perl5 + krævede libs.
+
+* Eksportformater og brug
+  :PROPERTIES:
+  :CUSTOM_ID: Formater-Brug
+  :END:
+
+** 4*vcf - 4 vcard filer med drenge/piger, forældre t. drenge/piger
+  :PROPERTIES:
+  :CUSTOM_ID: Formater-Brug.vcf-split
+  :END:
+
+*** Hvordan bruge data
+  :PROPERTIES:
+  :CUSTOM_ID: Formater-Brug.vcf-split.usage
+  :END:
+*** Detalier
+  :PROPERTIES:
+  :CUSTOM_ID: Formater-Brug.vcf-split.details
+  :END:
+Output fra skfi-adr: vcard (.vcf) filer - i alt 4 for hver klasse:
+- .vcf fil med kontaktoplysninger på klassen drenge
+- .vcf fil med kontaktoplysninger på klassen piger
+- .vcf fil med kontaktoplysninger på forældre til klassen drenge
+- .vcf fil med kontaktoplysninger på forældre til klassen piger
+
+Vcard filerne er i version 3.0.
+
+Disse 4 filer kan enten importeres i 4 forskellige grupper eller
+samlet i en eller flere grupper efter behov.
+
+Filerne indeholder vcards for hver person med de oplysninger der er
+på den enkelte elev/forældre. I dets nuværende form sammenflettes data
+ikke ud over relation imellem barn og forældre.
+
+Yderligere sammenfletning af data vil kræve nogle mere eller mindre
+kvalifierede gæt.
+
+Forældre oprettes med flg. navn:
+: <Barnets fornavn eller nickname>: Forældrens fulde navn.
+Hvis der er flere søskende (enten i samme klasse, eller flere
+klasser) oprettes forældrene flere gange - for lettere søgning.
+
+* Usage
+Info kommer.
+
+
+
