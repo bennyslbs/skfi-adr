@@ -13,6 +13,7 @@ use File::stat;
 use POSIX;
 #use MIME::Base64;	  # Only needed for storing pictures in vcards
 
+my $client_uuid = '228e3e02-e9c3-4aa1-9918-85d5851f419d';
 
 my (%opts);
 use Getopt::Long qw(:config no_ignore_case);
@@ -140,13 +141,13 @@ if ($missingGender) {
 ProcessInfoRemoveEmptyFields({opts => \%opts, cfg => \%cfg, contacts => \%contacts});
 
 # ORG in exported vcards
-my $org = defined $opts{org}?$opts{org}:"skfi".$kl;
+my $org = defined $opts{org}?$opts{org}:"skfi:".$kl;
 
 #StoreVcardsCombined({opts => \%opts, cfg => \%cfg, org => $org, modTime => \%modTime, contacts => \%contacts});
 # Create four files separated on students and parents boy and girls (the students)
 foreach my $srcGroup (qw(students parents)) {
   foreach my $gender (qw(b g)) {
-    StoreVcardsSeparate({opts => \%opts, cfg => \%cfg, org => $org, modTime => \%modTime, contacts => \%contacts, srcGroups => $srcGroup, gender => $gender});
+    StoreVcardsSeparate({opts => \%opts, cfg => \%cfg, kl => $kl, org => $org, modTime => \%modTime, contacts => \%contacts, srcGroups => $srcGroup, gender => $gender});
   }
 }
 
@@ -730,32 +731,36 @@ sub StoreVcardsSeparate {
       my %c = %{$$studentData{$e}};
       $vcard .= <<'EOSinit';
 BEGIN:VCARD
-VERSION:3.0
+VERSION:4.0
 EOSinit
+      my $student_uid = $student;
+      $student_uid =~ tr/a-zA-Z//dc;
+      $student_uid = "skfi-adr-".$$pms{kl}."-".$student_uid;
+      $vcard .= "UID:urn:uuid:".$student_uid.'-'.$e."\n";
       if ($e eq 'student') {
 	$vcard .= 'N:'.$c{name}.'
 N:'.SplitName(';', $c{name}).';;'."\n";
       }
       else { # Parent - Prefix name with <student nickname or student first name>:
 	my $studentNick = GetNickOrFirstName({contact => $$studentData{student}}); # Prefix: student Nick or First name
-	$vcard .= 'FN:'.$studentNick.'\\: '.$c{name}.'
-N:'.SplitName(';', $c{name}, $studentNick.'\\: ').';;'."\n";
+	$vcard .= 'FN;PID=1.1:'.$studentNick.': '.$c{name}.'
+N:'.SplitName(';', $c{name}, $studentNick.': ').';;'."\n";
       }
-      $vcard .= VcardAddFieldOptional({contact => \%c, pre => 'NICKNAME:', post => '', field => 'nickname'});
-      $vcard .= VcardAddFieldOptional({contact => \%c, pre => 'EMAIL;TYPE=INTERNET;TYPE=WORK:', post => '', field => 'email_work'});
-      $vcard .= VcardAddFieldOptional({contact => \%c, pre => 'EMAIL;TYPE=INTERNET;TYPE=HOME:', post => '', field => 'email'});
-      $vcard .= VcardAddFieldOptional({contact => \%c, pre => 'ADR;TYPE=HOME:', post => '', field => 'adr', type => 'adr'});
-      $vcard .= VcardAddFieldOptional({contact => \%c, pre => 'TEL;TYPE=CELL:', post => '', field => 'phone_mob', type => 'phone'});
-      $vcard .= VcardAddFieldOptional({contact => \%c, pre => 'TEL;TYPE=HOME:', post => '', field => 'phone_home', type => 'phone'});
+      $vcard .= VcardAddFieldOptional({contact => \%c, pre => 'NICKNAME;PID=1.1:', post => '', field => 'nickname'});
+      $vcard .= VcardAddFieldOptional({contact => \%c, pre => 'EMAIL;PID=1.1;TYPE=WORK:', post => '', field => 'email_work'});
+      $vcard .= VcardAddFieldOptional({contact => \%c, pre => 'EMAIL;PID=2.1;TYPE=HOME:', post => '', field => 'email'});
+      $vcard .= VcardAddFieldOptional({contact => \%c, pre => 'ADR;PID=1.1;TYPE=HOME:', post => '', field => 'adr', type => 'adr'});
+      $vcard .= VcardAddFieldOptional({contact => \%c, pre => 'TEL;PID=1.1;TYPE=CELL:', post => '', field => 'phone_mob', type => 'phone'});
+      $vcard .= VcardAddFieldOptional({contact => \%c, pre => 'TEL;PID=2.1;TYPE=HOME:', post => '', field => 'phone_home', type => 'phone'});
       $vcard .= VcardAddFieldOptional({contact => \%c, pre => 'BDAY:', post => '', field => 'birthday', type => 'date'});
-      my $org = $$pms{org};
-      $vcard .= 'ORG:'.$org."\n" if defined $$pms{org};
+      $vcard .= 'ORG;PID=1.1:'.$$pms{org}."\n" if defined $$pms{org};
       # Insert relations (parent<->child)
       if ($e eq 'student') {
 	for (my $i = 1; $i <= 2; $i++) {
 	  if (defined $$studentData{'parent'.$i} && defined $$studentData{'parent'.$i}{name}) {
 	    $itemCnt++;
-	    $vcard .= 'item'.$itemCnt.'.X-ABRELATEDNAMES:'.$$studentData{'parent'.$i}{name}."\n";
+	    $vcard .= "RELATED;PID=".$itemCnt.".1;TYPE=parent:urn:uuid:".$student_uid."-parent".$itemCnt."\n";
+            $vcard .= 'item'.$itemCnt.'.X-ABRELATEDNAMES:'.$$studentData{'parent'.$i}{name}."\n";
 	    $vcard .= 'item'.$itemCnt.'.X-ABLabel:_$!<Parent>!$_'."\n"; # Instead of Parent Mother and Father is legal, but parent1 and parent2 is not always mother and father in that order
 	  }
 	}
@@ -763,10 +768,13 @@ N:'.SplitName(';', $c{name}, $studentNick.'\\: ').';;'."\n";
       else {
 	# Parents - insert ralation to child/student
 	$itemCnt++;
+        $vcard .= "RELATED;PID=".$itemCnt.".1;TYPE=child:urn:uuid:".$student_uid."-student\n";
 	$vcard .= 'item'.$itemCnt.'.X-ABRELATEDNAMES:'.$$studentData{student}{name}."\n";
 	$vcard .= 'item'.$itemCnt.'.X-ABLabel:_$!<Child>!$_'."\n";
       }
 
+      $vcard .= "SOURCE;PID=1.1:skfi-adr\n";
+      $vcard .= "REV:".POSIX::strftime('%Y%m%dT%H%M%S%z', localtime($$pms{modTime}{max}))."\n";
       $vcard .= 'NOTE:';
       # Write note about wher the data comes from
       $vcard .= 'Data hentet fra forældreintra d. ';
@@ -779,6 +787,7 @@ N:'.SplitName(';', $c{name}, $studentNick.'\\: ').';;'."\n";
 	$vcard .= POSIX::strftime('%Y-%m-%d %H:%M', localtime($$pms{modTime}{max})) .'.';
       }
       $vcard .= "\n";		# End of NOTE
+      $vcard .= "CLIENTPIDMAP:1;urn:uuid:".$client_uuid."\n";
       $vcard .= 'END:VCARD'."\n";
 
       #$vcard .= VcardAddJpg({jpg => '<path to jpg>.jpg'});

@@ -69,7 +69,7 @@ Output fra skfi-adr: vcard (.vcf) filer - i alt 4 for hver klasse:
 - .vcf fil med kontaktoplysninger på forældre til klassen drenge
 - .vcf fil med kontaktoplysninger på forældre til klassen piger
 
-Vcard filerne er i version 3.0.
+Vcard filerne er i version 4.0.
 
 Disse 4 filer kan enten importeres i 4 forskellige grupper eller
 samlet i en eller flere grupper efter behov.
