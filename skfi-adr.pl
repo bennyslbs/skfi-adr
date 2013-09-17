@@ -54,7 +54,7 @@ if (defined $opts{h}) {
 }
 
 sub print_help_msg {
-  print "Usage: $0 [-q] [-v]  [-h|-i <Input Filenames Base> -o <Output Filenames Base> [-O <OrganisationName>]]
+  print "Usage: $0 [-q] [-v] [-h|-i <Input Filenames Base> -o <Output Filenames Base> [-O <OrganisationName>] [-c <Common postfix, appended to -i, -o, -O (-O only if -O specified)>]
 Where
 <Filename Base> is the common part of the file names.
 Trailing part of file names:

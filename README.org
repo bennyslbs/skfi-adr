@@ -35,7 +35,6 @@
 
   Download skfi-adr.pl fra file:./skfi-adr.pl
 
-
 *** Afhængigheder
     perl5 + krævede libs.
 
@@ -53,7 +52,14 @@
   :PROPERTIES:
   :CUSTOM_ID: Formater-Brug.vcf-split.usage
   :END:
-*** Detalier
+
+De genererede vcf filer kan importes i et adressekartotek (f. eks
+integreret i dit mailprogram, GPS, ...). Hvordan
+dette gøres afhænger af hvilket adressekartotek du bruger.
+
+Søg efter "<dit mailprogram> vcard import" f. eks på Google.
+
+*** Detalier - genereret output
   :PROPERTIES:
   :CUSTOM_ID: Formater-Brug.vcf-split.details
   :END:
