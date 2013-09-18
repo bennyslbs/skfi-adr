@@ -778,13 +778,13 @@ N:'.SplitName(';', $c{name}, $studentNick.': ').';;'."\n";
       $vcard .= 'NOTE:';
       # Write note about wher the data comes from
       $vcard .= 'Data hentet fra forældreintra d. ';
-      $vcard .= POSIX::strftime('%Y-%m-%d %H:%M', localtime($$pms{modTime}{min})) .' - ';
+      $vcard .= POSIX::strftime('%Y-%m-%d', localtime($$pms{modTime}{min}));
       if (POSIX::strftime('%Y-%m-%d', localtime($$pms{modTime}{min})) eq
 	  POSIX::strftime('%Y-%m-%d', localtime($$pms{modTime}{max}))) {
-	$vcard .= POSIX::strftime('%H:%M', localtime($$pms{modTime}{max})) .'.';
+	$vcard .= '.';
       }
       else {
-	$vcard .= POSIX::strftime('%Y-%m-%d %H:%M', localtime($$pms{modTime}{max})) .'.';
+	$vcard .= ' - ' .POSIX::strftime('%Y-%m-%d', localtime($$pms{modTime}{max})) .'.';
       }
       $vcard .= "\n";		# End of NOTE
       $vcard .= "CLIENTPIDMAP:1;urn:uuid:".$client_uuid."\n";
