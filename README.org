@@ -57,7 +57,11 @@ De genererede vcf filer kan importes i et adressekartotek (f. eks
 integreret i dit mailprogram, GPS, ...). Hvordan
 dette gøres afhænger af hvilket adressekartotek du bruger.
 
+Husk: Tag backup INDEN du importerer disse data i adressekartoteket.
+
 Søg efter "<dit mailprogram> vcard import" f. eks på Google.
+
+Se også [[#ImportEx.vcf-split][her]].
 
 *** Detalier - genereret output
   :PROPERTIES:
@@ -89,5 +93,78 @@ klasser) oprettes forældrene flere gange - for lettere søgning.
 * Usage
 Info kommer.
 
+* Import ex - 4*vcf
+  :PROPERTIES:
+  :CUSTOM_ID: ImportEx.vcf-split
+  :END:
 
+** Gmail
+  :PROPERTIES:
+  :CUSTOM_ID: ImportEx.vcf-split.gmail
+  :END:
 
+Guide til at få kontaktpersonerne for klassen ind i Gmails kontakter (og
+videre til evt. Android adressekartotek).
+
+Steps:
+- Tag backup af dit adressekartotek først.
+- Importer de 4 .vcf filer for hver klasse i hver sin gruppe.
+
+Dette gøres ved:
+
+1: Backup (eksporter) - følg guide:
+   https://support.google.com/mail/answer/24911?hl=da
+2: Gå ind på http://gmail.com
+3: Vælg Kontaktpersoner (Pil ned ved t.h. for Email)
+4: For hver af de 4 .vcf filer der er pr. klasse følges denne vejledning:
+   A: Tryk på "Mere" knappen over listen med kontaktpersoner
+   B: Vælg "Importer ..."
+   C: Vælg "Browse"
+   D: Browse frem til en af .vcf filerne, og vælg "open" (Kan hedde
+      forskelligt afhængig af operativ system.
+   E: Vælg Importer
+   F: Vent et øjeblik, og der er kommet en ny gruppe
+      "Importeret DD/MM/YY" (evt. med nr. efter hvis gruppen allerede findes)
+   G: Klik på den nye gruppe
+   H: Over kontakterne er der en lyserød bar m. bla. mulighed for at
+      klikke på: "Find og flet dobbelte forekomster" - Vælg dette
+      ... og:
+   I: Fjern fluebenet ud for Navn (Alle flueben forsvinder)
+   J: Vælg "Flet" (Der flettes ikke, men Gmail marker at kontakterne er flettet)
+   K: Omdøb gruppen til sigende navn efter eget ønske, eks. Peters
+      kl. D F (Der bliver 4 grupper for klassen: Drenge, piger,
+      forældre t. Drenge, forældre til piger)
+      Vælg "Mere" -> "Omdøb gruppe"
+5: Vent noget tid, og du vil se kalenderen synkroniseret med evt. Android
+   Smartphones der synkroniserer med denne gmail konto.
+   Først bliver grupperne synlige på telefonen, og efter noget tid
+   indeholder grupperne også kontakter.
+   Hvis tålmodigheden slipper op:
+   Vælg indstillinger->Konti->Google->Synk. alle (på smartphonen).
+6: Android 4.1's "Kontakter" app forsøger at flette kontakterne (på basis
+   af fælles telefonnumre, email mv. Dette bør slås fra (efter min
+   mening), og gøres således (langsomt, så hvis nogen finder en
+   lettere måde, hører jeg gerne):
+   A: For hver kontakt gøres flg.
+      Det anbefales at gå systematisk frem, der er kun ca. 60 kontaker
+      for en klasse :). Det lader til at det er nok at gå igennem listen
+      med kontaker en gang, men kontakter kan hoppe til andet sted
+      når de bliver adskilt.
+      a: Rul ned til "Forbindelse"
+      b: Hvis der er flere Google-logoer (Blå firkant med g i),
+         klikkes der på linien med logoerne
+      c: Klik på ringen med (-) ud for en af kontakterne, vælg Ok
+         Det er underordnet hvilken man vælger.
+      d: Gentages indtil der kun er een kontakt (og et google-logo)
+
+   Hvis ikke dette punkt gennemføres ser listerne mangelfulde og
+   forkerte ud. F. eks kan det ske at listen med elever mangler
+   eleven, eller en af forældrenes navne står der istedet. og
+   tilsvarende i grupperne med forældre.
+   
+** Android
+  :PROPERTIES:
+  :CUSTOM_ID: ImportEx.vcf-split.android
+  :END:
+
+Via gmail: Se [[#ImportEx.vcf-split.gmail][Gmail]].
