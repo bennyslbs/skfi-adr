@@ -95,6 +95,14 @@ my $opt_file_ending_ids = ''; # Regexp - | separator if multiple optional files 
 $opts{in_file_base} =~ s/\.$//; # Remove optional trailing . from in_file_base
 $opts{out_file_base} =~ s/\.$//; # Remove optional trailing . from out_file_base
 
+# Genders - static variables
+use File::Basename;
+
+# Get list of known boy names
+my %genders;
+getGenderListFromFiles(\%genders, 'b', dirname($0).'/internal_data'.'/navne.drenge.dat');
+getGenderListFromFiles(\%genders, 'g', dirname($0).'/internal_data'.'/navne.piger.dat');
+
 my %modTime;
 $modTime{min} = 2**31;
 $modTime{max} = -2**31;
@@ -131,7 +139,7 @@ my $kl = $kl{(keys %kl)[0]};	# Get class from one of the elements
 ApplyContactModifications({contacts => \%contacts, kl => $kl, modFile => $opts{in_file_base}.$cfg{file_ending_mod}{contact_modifications}});
 # Private modifications
 ApplyContactModifications({contacts => \%contacts, kl => $kl, modFile => $opts{in_file_base}.$cfg{file_ending_mod}{private_contact_modifications}});
-my $missingGender = RequestMissingGenerInformation({contacts => \%contacts, commonDataFile => $opts{in_file_base}.$cfg{file_ending_mod}{contact_modifications}});
+my $missingGender = RequestMissingGenerInformation({verbose => $opts{v}, contacts => \%contacts, commonDataFile => $opts{in_file_base}.$cfg{file_ending_mod}{contact_modifications}});
 if ($missingGender) {
   print STDERR "Error: Pleace add missing info, and rerun. STOP.\n";
   exit $missingGender;
@@ -390,9 +398,10 @@ sub GetParentsContactInfo {
       if (defined $$pms{contacts}{$c}{contact5}) { # 5 or all 6 fields used
 	# Parsing contact6 and use + remove if seems ok
 	if (defined $$pms{contacts}{$c}{contact6}) {
-	  if ($$pms{contacts}{$c}{contact6} =~ m/^([0-9]+)\,\ ([0-9]+)$/) {
+	  if ($$pms{contacts}{$c}{contact6} =~ m/^([0-9]+|\-)\,\ ([0-9]+|\-)(-([0-9]+))?$/) {
 	    $$pms{contacts}{$c}{parent2}{phone_home} = $1;
 	    $$pms{contacts}{$c}{parent2}{phone_mob} = $2;
+	    $$pms{contacts}{$c}{parent2}{phone_mob2} = $4 if defined $4 && $4 ne '';
 	    delete $$pms{contacts}{$c}{contact6};
 	  }
 	  elsif ($$pms{contacts}{$c}{contact6} =~ m/^([0-9]+)$/) {
@@ -408,12 +417,13 @@ sub GetParentsContactInfo {
 	}
 
 	# Parsing contact5 and use + remove if seems ok
-	if ($$pms{contacts}{$c}{contact5} =~ m/^([0-9]+)\,\ ([0-9]+)$/) {
+	if ($$pms{contacts}{$c}{contact5} =~ m/^([0-9]+|\-)\,\ ([0-9]+|\-)(-([0-9]+))?$/) {
 	  $$pms{contacts}{$c}{parent1}{phone_home} = $1;
 	  $$pms{contacts}{$c}{parent1}{phone_mob} = $2;
+          $$pms{contacts}{$c}{parent1}{phone_mob2} = $4 if defined $4 && $4 ne '';
 	  delete $$pms{contacts}{$c}{contact5};
 	}
-	elsif ($$pms{contacts}{$c}{contact5} =~ m/^([0-9]+)$/) {
+	elsif ($$pms{contacts}{$c}{contact5} =~ m/^([0-9]+|\-)$/) {
 	  $$pms{contacts}{$c}{parent1}{phone_home} = $1;
 	  delete $$pms{contacts}{$c}{contact5};
 	}
@@ -429,6 +439,10 @@ sub GetParentsContactInfo {
 	  $$pms{contacts}{$c}{parent2}{adr} = $1.", ".$2;
 	  delete $$pms{contacts}{$c}{contact4};
 	}
+	elsif ($$pms{contacts}{$c}{contact4} =~ m/^([0-9]{4} .*)$/) { # No address except Contains 4 digit postal code + town
+	  $$pms{contacts}{$c}{parent2}{adr} = $1;
+	  delete $$pms{contacts}{$c}{contact4};
+	}
 	elsif ($$pms{contacts}{$c}{contact4} =~ m/^$/) { # Empty field
 	  delete $$pms{contacts}{$c}{contact4};
 	}
@@ -439,6 +453,10 @@ sub GetParentsContactInfo {
 	# Parsing contact3 and use + remove if seems ok
 	if ($$pms{contacts}{$c}{contact3} =~ m/^(.*?), ([0-9]{4} .*)$/) { # Contains 4 digit postal code
 	  $$pms{contacts}{$c}{parent1}{adr} = $1.", ".$2;
+	  delete $$pms{contacts}{$c}{contact3};
+	}
+	elsif ($$pms{contacts}{$c}{contact3} =~ m/^([0-9]{4} .*)$/) { # No address except Contains 4 digit postal code + town
+	  $$pms{contacts}{$c}{parent1}{adr} = $1;
 	  delete $$pms{contacts}{$c}{contact3};
 	}
 	elsif ($$pms{contacts}{$c}{contact3} =~ m/^$/) { # Empty field
@@ -604,29 +622,32 @@ sub RequestMissingGenerInformation {
   PERSON:
     # Check gender
     if (not defined $$pms{contacts}{$student}{student}{gender}) { # Missing gender info
-      $msg .= "$student:\n  student:\n    gender: b|g\n    nickname:\n";
-      $missing++;
+      if (getGender($student) eq 'b|g') { # Not regex match, b|g is returned if b or g
+        $msg .= "$student:\n  student:\n    gender: b|g\n    nickname:\n";
+        $missing++;
+      }
+      else {
+        $$pms{contacts}{$student}{student}{gender} = getGender($student);
+        $msg .= "$student:\n  student:\n    #gender: ".getGender($student)."\n    nickname:\n";
+      }
     }
     elsif ($$pms{contacts}{$student}{student}{gender} !~ /^[bg]$/) {
       print STDERR "Error: Wrong gender for $student: $$pms{contacts}{$student}{student}{gender}. Place fix it in $$pms{commonDataFile}.\n";
     }
   }
 
-  if ($missing) {
-    if (!-e $$pms{commonDataFile}) {
-      my $fh = IO::File->new($$pms{commonDataFile}, "w");
-      if (defined $fh) {
+  if (!-e $$pms{commonDataFile}) {
+    my $fh = IO::File->new($$pms{commonDataFile}, "w");
+    if (defined $fh) {
 	# File doesent exist, but openend for write
 	print $fh $file_header_example.$msg;
 	undef $fh;
-	print STDERR "Pleace modify $$pms{commonDataFile} (just created)\n - change b|g to either b or g:\n";
 	return $missing;
-      }
     }
-    else {
-      print STDERR "Pleace add the following content to $$pms{commonDataFile} (create the file if missing)\n - and change b|g to either b or g:\n";
-      print STDERR $file_header_example.$msg;
-    }
+  }
+  elsif ($missing || $$pms{verbose}) {
+    print STDERR "Pleace add the following content to $$pms{commonDataFile} (create the file if missing)\n - and change b|g to either b or g:\n";
+    print STDERR $file_header_example.$msg;
   }
   return $missing;
 }
@@ -752,6 +773,7 @@ N:'.SplitName(';', $c{name}, $studentNick.': ').';;'."\n";
       $vcard .= VcardAddFieldOptional({contact => \%c, pre => 'ADR;PID=1.1;TYPE=HOME:', post => '', field => 'adr', type => 'adr'});
       $vcard .= VcardAddFieldOptional({contact => \%c, pre => 'TEL;PID=1.1;TYPE=CELL:', post => '', field => 'phone_mob', type => 'phone'});
       $vcard .= VcardAddFieldOptional({contact => \%c, pre => 'TEL;PID=2.1;TYPE=HOME:', post => '', field => 'phone_home', type => 'phone'});
+      $vcard .= VcardAddFieldOptional({contact => \%c, pre => 'TEL;PID=3.1;TYPE=CELL:', post => '', field => 'phone_mob2', type => 'phone'});
       $vcard .= VcardAddFieldOptional({contact => \%c, pre => 'BDAY:', post => '', field => 'birthday', type => 'date'});
       $vcard .= 'ORG;PID=1.1:'.$$pms{org}."\n" if defined $$pms{org};
       # Insert relations (parent<->child)
@@ -828,8 +850,8 @@ sub VcardAddFieldOptional {
 	# Else leave with src. formatting, might be ok.
       }
       elsif ($$pms{type} eq 'phone') {
-	if ($data =~ m/^([0-9]{2})([0-9]{2})([0-9]{2})([0-9]{2})$/) {
-	  $data = "$1 $2 $3 $4";
+	if ($data =~ m/^((00)?45)?([0-9]{2})([0-9]{2})([0-9]{2})([0-9]{2})$/) {
+	  $data = "$3 $4 $5 $6";
 	}
 	# Else leave with src. formatting, might be ok.
       }
@@ -891,6 +913,42 @@ sub SplitName {
     return $name.$split.$split;
   }
 }
+
+sub getGenderListFromFiles {
+  my $genderRef = shift @_;
+  my $gender = shift @_;
+  my $file = shift @_;
+
+  my %genders;
+  my $fh = IO::File->new($file, "r") || die("Can't open '$file'\n");
+  foreach my $l (<$fh>) {
+    chomp $l;
+    if ($l !~ m/^$/) {
+      $$genderRef{trim($l)} = $gender;
+    }
+  }
+  undef $fh;
+}
+
+sub getGender {
+  my $name = join(' ', @_);
+
+  my $name1 = $name;
+  # Try match name until first space
+  $name1 =~ s/^([^\ ]+).*$/$1/;
+  if (defined $genders{$name1}) {
+    return $genders{$name1};
+  }
+  # Try match name until first - or space
+  $name1 =~ s/^([^\-\ ]+).*$/$1/;
+  if (defined $genders{$name1}) {
+    return $genders{$name1};
+  }
+
+  # No match
+  return 'b|g';
+}
+
 
 # ######################################################################
 # General helper functions
