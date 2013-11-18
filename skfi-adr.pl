@@ -37,7 +37,7 @@ if (!defined $opts{in_file_base}) {
 }
 
 if (!defined $opts{out_file_base}) {
-  print "Option -f is needed\n";
+  print "Option -o is needed\n";
   usage();
 }
 
@@ -240,7 +240,7 @@ sub GetStudentAdrPhone {
 	$$pms{contacts}{trim($1)}{student}{phone_mob} = trim($4);
       }
       else {
-	print "Unknown line in $filename: '$l'\n";
+	print "Error: GetStudentAdrPhone: Unknown line in $filename: '$l'\n";
       }
     }
     undef $fh;
@@ -277,7 +277,7 @@ sub GetStudentEmail {
 	$$pms{contacts}{trim($1)}{student}{email_work} = trim($2);
       }
       else {
-	print "Unknown line in $filename: '$l'\n";
+	print "Error: GetStudentEmail: Unknown line in $filename: '$l'\n";
       }
     }
     undef $fh;
@@ -317,7 +317,7 @@ sub GetStudentBirthday {
 	$$pms{contacts}{trim($1)}{student}{birthday} = trim($2);
       }
       else {
-	print "Unknown line in $filename: '$l'\n";
+	print "Error: GetStudentBirthday Unknown line in $filename: '$l'\n";
       }
     }
     undef $fh;
@@ -388,7 +388,7 @@ sub GetParentsContactInfo {
 	$$pms{contacts}{$student}{"contact$infoFields"} = trim($1);
       }
       else {
-	print "Unknown line in $filename: '$l'\n";
+	print "Error: GetParentsContactInfo: Unknown line in $filename: '$l'\n";
       }
     }
     undef $fh;
