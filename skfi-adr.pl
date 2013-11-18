@@ -59,14 +59,36 @@ sub print_help_msg {
 Where
 <Filename Base> is the common part of the file names.
 Trailing part of file names:
-- navne.txt			(From Forældreintra)
-- elev_kontakt.txt		(From Forældreintra)
-- elev_email.txt		(From Forældreintra)
-- elev_fodselsdag.txt		(From Forældreintra)
-- kontaktoplysninger.txt	(From Forældreintra)
-- foraeldre_email.txt		(From Forældreintra)
-- contact_modifications.txt		(YAML file with common modifications + extra info compared to Forældreintra)
-- private_contact_modifications.txt	(YAML file with private modifications + extra info compared to Forældreintra - same syntax as contact_modifications.txt, but for personal use)
+- .navne.txt *)			(From Forældreintra)
+- .elev_kontakt.txt *)		(From Forældreintra)
+- .elev_email.txt *)		(From Forældreintra)
+- .elev_fodselsdag.txt *)	(From Forældreintra)
+- .kontaktoplysninger.txt *)	(From Forældreintra)
+- .foraeldre_email.txt *)	(From Forældreintra)
+- .contact_modifications.txt
+  (YAML file with common modifications + extra info compared to Forældreintra)
+- private_contact_modifications.txt
+  (YAML file with private modifications + extra info compared to Forældreintra -
+  same syntax as contact_modifications.txt, but for personal use)
+
+*) The content in the files marked *) can be concatenated into
+   one common file with trailing part: '.txt'.
+   Note: If one of the above files exists it will be read instead of the
+   common file => common file is only used for 'files' that are NOT as
+   separate files.
+
+   The parsing of the common file is based on the header/footer lines
+   from Forældreintra.
+   It is allowed with custom user separation between the different contents.
+   Header lines are (X=The class identifyer, e.g. 0A):
+   - Navneliste for X
+   - Adresse\- og telefonliste for X
+   - Liste over X's e-mailadresser
+   - Oversigt over fødselsdage i X
+   - Kontaktoplysninger i X
+   - Forældrenes e-mailadresser i X
+   Footer lines are identified by a line
+   starting with optional spaces followed by FORÆLDREINTRA.
 ";
 }
 
@@ -87,6 +109,8 @@ $cfg{file_ending}{student_email} = '.elev_email.txt';
 $cfg{file_ending}{student_birthday} = '.elev_fodselsdag.txt';
 $cfg{file_ending}{parents_contact} = '.kontaktoplysninger.txt';
 $cfg{file_ending}{parents_email} = '.foraeldre_email.txt';
+my $file_ending_common = '.txt'; # Content from the above files can be located in a common file with this ending
+
 $cfg{file_ending_mod}{contact_modifications} = '.contact_modifications.txt';
 $cfg{file_ending_mod}{private_contact_modifications} = '.private_contact_modifications.txt';
 
@@ -110,6 +134,13 @@ my $missing = 0;
 while (my ($id, $fEnding) = each %{$cfg{file_ending}}) {
   my $file = $opts{in_file_base}.$fEnding;
   if (-e $file) {
+    my $time = stat($file)->mtime;
+    $modTime{min} = $time if ($time < $modTime{min});
+    $modTime{max} = $time if ($time > $modTime{max});
+  }
+  elsif (-e $opts{in_file_base}.$file_ending_common) {
+    $file = $opts{in_file_base}.$file_ending_common;
+    $cfg{file_ending}{$id} = $file_ending_common;
     my $time = stat($file)->mtime;
     $modTime{min} = $time if ($time < $modTime{min});
     $modTime{max} = $time if ($time > $modTime{max});
@@ -184,13 +215,18 @@ sub GetStudentNames {
   my $filename = $$pms{opts}{in_file_base}.$$pms{cfg}{file_ending}{$entry};
   my $fh = IO::File->new($filename, "r");
   if (defined $fh) {
+    my $active_section = 0;
   LINE:
     foreach my $l (<$fh>) {
       chomp $l;
       if ($l =~ m/^Navneliste for (.*)$/) {
+        $active_section = 1;
 	$$pms{kl}{$entry} = trim($1);
       }
-      elsif ($l =~ m/^\s*FORÆLDREINTRA/) {
+      elsif ($active_section == 0) {
+        next LINE;
+      }
+      elsif ($l =~ m/^\s*FORÆLDREINTRA/ && $active_section) {
 	last LINE;
       }
       elsif ($l =~ m/^\s*$/) {
@@ -218,13 +254,18 @@ sub GetStudentAdrPhone {
   my $filename = $$pms{opts}{in_file_base}.$$pms{cfg}{file_ending}{$entry};
   my $fh = IO::File->new($filename, "r");
   if (defined $fh) {
+    my $active_section = 0;
   LINE:
     foreach my $l (<$fh>) {
       chomp $l;
       if ($l =~ m/^\s*Adresse\- og telefonliste for (.*)\s*$/) {
+        $active_section = 1;
 	$$pms{kl}{$entry} = trim($1);
       }
-      elsif ($l =~ m/^\s*FORÆLDREINTRA/) {
+      elsif ($active_section == 0) {
+        next LINE;
+      }
+      elsif ($l =~ m/^\s*FORÆLDREINTRA/ && $active_section) {
 	last LINE;
       }
       elsif ($l =~ m/^\s*$/) {
@@ -261,13 +302,18 @@ sub GetStudentEmail {
   my $filename = $$pms{opts}{in_file_base}.$$pms{cfg}{file_ending}{$entry};
   my $fh = IO::File->new($filename, "r");
   if (defined $fh) {
+    my $active_section = 0;
   LINE:
     foreach my $l (<$fh>) {
       chomp $l;
       if ($l =~ m/^\s*Liste over (.*)'s e-mailadresser\s*$/) {
+        $active_section = 1;
 	$$pms{kl}{$entry} = trim($1);
       }
-      elsif ($l =~ m/^\s*FORÆLDREINTRA/) {
+      elsif ($active_section == 0) {
+        next LINE;
+      }
+      elsif ($l =~ m/^\s*FORÆLDREINTRA/ && $active_section) {
 	last LINE;
       }
       elsif ($l =~ m/^\s*$/) {
@@ -298,13 +344,18 @@ sub GetStudentBirthday {
   my $filename = $$pms{opts}{in_file_base}.$$pms{cfg}{file_ending}{$entry};
   my $fh = IO::File->new($filename, "r");
   if (defined $fh) {
+    my $active_section = 0;
   LINE:
     foreach my $l (<$fh>) {
       chomp $l;
       if ($l =~ m/^\s*Oversigt over fødselsdage i (.*)\s*$/) {
+        $active_section = 1;
 	$$pms{kl}{$entry} = trim($1);
       }
-      elsif ($l =~ m/^\s*FORÆLDREINTRA/) {
+      elsif ($active_section == 0) {
+        next LINE;
+      }
+      elsif ($l =~ m/^\s*FORÆLDREINTRA/ && $active_section) {
 	last LINE;
       }
       elsif ($l =~ m/^\s*$/) {
@@ -340,13 +391,18 @@ sub GetParentsContactInfo {
   my $student = '?';
   my $infoFields;
   if (defined $fh) {
+    my $active_section = 0;
   LINE:
     foreach my $l (<$fh>) {
       chomp $l;
       if ($l =~ m/^\s*Kontaktoplysninger i (.*)\s*$/) {
+        $active_section = 1;
 	$$pms{kl}{$entry} = trim($1);
       }
-      elsif ($l =~ m/^\s*FORÆLDREINTRA/) {
+      elsif ($active_section == 0) {
+        next LINE;
+      }
+      elsif ($l =~ m/^\s*FORÆLDREINTRA/ && $active_section) {
 	last LINE;
       }
       elsif ($l =~ m/^\s*$/) {
@@ -508,11 +564,16 @@ sub GetParentsEmail {
     my $lastFieldWasEmail = 1; # 1: Email, 0=Name - After email-addresses a new student name comes
     # Are parent1s and parent2s names found? - Store in array in the order they have been found
     my @parents_found = ();	# Element values: parent1, parent2
+    my $active_section = 0;
   FIELD:
     foreach my $f (split("\t", join("\t", <$fh>))) {
       chomp $f;
       if ($f =~ m/^Forældrenes e-mailadresser i (.*)$/) {
+        $active_section = 1;
 	$$pms{kl}{$entry} = trim($1);
+      }
+      elsif ($active_section == 0) {
+        next FIELD;
       }
       elsif ($f =~ m/^(ELEV|KONTAKTPERSON|E\-MAILADRESSE)/) {
 	# Header-fields
@@ -520,7 +581,7 @@ sub GetParentsEmail {
       elsif ($f =~ m/^\s*$/) {
 	# Drop empty/white space only line
       }
-      elsif ($f =~ m/^FORÆLDREINTRA/) {
+      elsif ($f =~ m/^FORÆLDREINTRA/ && $active_section) {
 	# Stop processing - footer
 	last FIELD;
       }
