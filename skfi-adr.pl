@@ -89,6 +89,25 @@ Trailing part of file names:
    - Forældrenes e-mailadresser i X
    Footer lines are identified by a line
    starting with optional spaces followed by FORÆLDREINTRA.
+
+Example template for common data file
+(with org-mode user-headers - can be deleted/edited/...):
+# -*-org-*-
+* Extrakt d. 20xx.xx.xx
+** xA Kl.
+
+*** Navneliste
+
+*** Adresse- og telefonliste
+
+*** Elevernes e-mailadresser
+
+*** Elevernes fødselsdage
+
+*** Kontaktoplysninger
+
+*** Forældrenes e-mailadresser
+
 ";
 }
 
