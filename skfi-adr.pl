@@ -196,6 +196,7 @@ if ($missingGender) {
 }
 
 
+ProcessInfoSplitPhone({opts => \%opts, cfg => \%cfg, contacts => \%contacts});
 ProcessInfoRemoveEmptyFields({opts => \%opts, cfg => \%cfg, contacts => \%contacts});
 
 # ORG in exported vcards
@@ -427,7 +428,7 @@ sub GetParentsContactInfo {
       elsif ($l =~ m/^\s*$/) {
 	# Drop empty/white space only line
       }
-      elsif ($l =~ m/^ELEV	KONTAKTPERSON 	ADRESSE 	TELEFON $/) {
+      elsif ($l =~ m/^ELEV	KONTAKTPERSON 	ADRESSE 	FASTNET 	MOBIL 	ARBEJDE $/) {
 	# Headerline
       }
       elsif ($l =~ m/^\ ([^\t]*)\t([^\t]*)(\t(.*))?$/) { # 1 Space, 2 or more (seen max 3) fields with tabs between: 1: student, 2:parent1, 3:Different
@@ -436,13 +437,11 @@ sub GetParentsContactInfo {
 	$$pms{contacts}{$student}{parent1}{name} = trim($2);
 	if (defined($4) && $4 ne "") {
 	  my @fields = split("\t", $4);
-	  if (scalar @fields == 2) { # Special case - only seen parent1s contact info on this form - might fail - HACK
+	  if (scalar @fields == 3) { # Special case - only seen parent1s contact info on this form - might fail - HACK
 	    $$pms{contacts}{$student}{parent1}{adr} = trim($fields[0]);
 	    $infoFields = 5;	# Parent1s phone - HACK
-	    $$pms{contacts}{$student}{contact5} = trim($fields[1]);
-	    $$pms{contacts}{$student}{contact4} = '';
-	    $$pms{contacts}{$student}{contact3} = '';
-	    $$pms{contacts}{$student}{contact2} = '';
+	    $$pms{contacts}{$student}{parent1}{phone_home} = trim($fields[1]);
+	    $$pms{contacts}{$student}{parent1}{phone_mob} = trim($fields[2]);
 	  }
 	  else {		# General case
 	    foreach my $f (@fields) {
@@ -470,43 +469,27 @@ sub GetParentsContactInfo {
 
     # Fix contact info
     foreach my $c (keys $$pms{contacts}) {
-      if (defined $$pms{contacts}{$c}{contact5}) { # 5 or all 6 fields used
-	# Parsing contact6 and use + remove if seems ok
-	if (defined $$pms{contacts}{$c}{contact6}) {
-	  if ($$pms{contacts}{$c}{contact6} =~ m/^([0-9]+|\-)\,\ ([0-9]+|\-)(-([0-9]+))?$/) {
-	    $$pms{contacts}{$c}{parent2}{phone_home} = $1;
-	    $$pms{contacts}{$c}{parent2}{phone_mob} = $2;
-	    $$pms{contacts}{$c}{parent2}{phone_mob2} = $4 if defined $4 && $4 ne '';
-	    delete $$pms{contacts}{$c}{contact6};
-	  }
-	  elsif ($$pms{contacts}{$c}{contact6} =~ m/^([0-9]+)$/) {
-	    $$pms{contacts}{$c}{parent2}{phone_home} = $1;
-	    delete $$pms{contacts}{$c}{contact6};
-	  }
-	  elsif ($$pms{contacts}{$c}{contact6} =~ m/^$/) { # Empty field
-	    delete $$pms{contacts}{$c}{contact6};
-	  }
-	  else {
-	    print STDERR "Warning: Expecting one or two phone numbers for parent2 to $c, got: '$$pms{contacts}{$c}{contact6}'\n";
-	  }
+      if (defined $$pms{contacts}{$c}{contact7}) { # Assuming 2 parents with all or partial info (except work phone)
+	# Assumes contact2 is parent2s name if non-empty and use + remove if seems ok
+	if ($$pms{contacts}{$c}{contact2} !~ m/^$/) { # !Empty field
+	  $$pms{contacts}{$c}{parent2}{name} = $$pms{contacts}{$c}{contact2};
 	}
+	delete $$pms{contacts}{$c}{contact2};
 
-	# Parsing contact5 and use + remove if seems ok
-	if ($$pms{contacts}{$c}{contact5} =~ m/^([0-9]+|\-)\,\ ([0-9]+|\-)(-([0-9]+))?$/) {
-	  $$pms{contacts}{$c}{parent1}{phone_home} = $1;
-	  $$pms{contacts}{$c}{parent1}{phone_mob} = $2;
-          $$pms{contacts}{$c}{parent1}{phone_mob2} = $4 if defined $4 && $4 ne '';
-	  delete $$pms{contacts}{$c}{contact5};
+	# Parsing contact3 and use + remove if seems ok
+	if ($$pms{contacts}{$c}{contact3} =~ m/^(.*?), ([0-9]{4} .*)$/) { # Contains 4 digit postal code
+	  $$pms{contacts}{$c}{parent1}{adr} = $1.", ".$2;
+	  delete $$pms{contacts}{$c}{contact3};
 	}
-	elsif ($$pms{contacts}{$c}{contact5} =~ m/^([0-9]+|\-)$/) {
-	  $$pms{contacts}{$c}{parent1}{phone_home} = $1;
-	  delete $$pms{contacts}{$c}{contact5};
+	elsif ($$pms{contacts}{$c}{contact3} =~ m/^([0-9]{4} .*)$/) { # No address except Contains 4 digit postal code + town
+	  $$pms{contacts}{$c}{parent1}{adr} = $1;
+	  delete $$pms{contacts}{$c}{contact3};
 	}
-	elsif ($$pms{contacts}{$c}{contact5} =~ m/^$/) { # Empty field
-	  delete $$pms{contacts}{$c}{contact5};
+	elsif ($$pms{contacts}{$c}{contact3} =~ m/^$/) { # Empty field
+	  delete $$pms{contacts}{$c}{contact3};
 	}
 	else {
-	  print STDERR "Warning: Expecting one or two phone numbers for parent1 to $c, got: '$$pms{contacts}{$c}{contact5}'\n";
+	  print STDERR "Warning: Expecting address for parent1 to $c, got: '$$pms{contacts}{$c}{contact3}' (no postal code)\n";
 	}
 
 	# Parsing contact4 and use + remove if seems ok
@@ -525,27 +508,20 @@ sub GetParentsContactInfo {
 	  print STDERR "Warning: Expecting address for parent2 to $c, got: '$$pms{contacts}{$c}{contact4}' (no postal code)\n";
 	}
 
-	# Parsing contact3 and use + remove if seems ok
-	if ($$pms{contacts}{$c}{contact3} =~ m/^(.*?), ([0-9]{4} .*)$/) { # Contains 4 digit postal code
-	  $$pms{contacts}{$c}{parent1}{adr} = $1.", ".$2;
-	  delete $$pms{contacts}{$c}{contact3};
-	}
-	elsif ($$pms{contacts}{$c}{contact3} =~ m/^([0-9]{4} .*)$/) { # No address except Contains 4 digit postal code + town
-	  $$pms{contacts}{$c}{parent1}{adr} = $1;
-	  delete $$pms{contacts}{$c}{contact3};
-	}
-	elsif ($$pms{contacts}{$c}{contact3} =~ m/^$/) { # Empty field
-	  delete $$pms{contacts}{$c}{contact3};
-	}
-	else {
-	  print STDERR "Warning: Expecting address for parent1 to $c, got: '$$pms{contacts}{$c}{contact3}' (no postal code)\n";
-	}
+        $$pms{contacts}{$c}{parent1}{phone_home} = $$pms{contacts}{$c}{contact5};
+        delete $$pms{contacts}{$c}{contact5};
 
-	# Assumes contact2 is parent2s name if non-empty and use + remove if seems ok
-	if ($$pms{contacts}{$c}{contact2} !~ m/^$/) { # !Empty field
-	  $$pms{contacts}{$c}{parent2}{name} = $$pms{contacts}{$c}{contact2};
+        $$pms{contacts}{$c}{parent2}{phone_home}  = $$pms{contacts}{$c}{contact6};
+        delete $$pms{contacts}{$c}{contact6};
+
+        $$pms{contacts}{$c}{parent1}{phone_mob} = $$pms{contacts}{$c}{contact7};
+        delete $$pms{contacts}{$c}{contact7};
+
+	if (defined $$pms{contacts}{$c}{contact8}) {
+          $$pms{contacts}{$c}{parent2}{phone_mob}  = $$pms{contacts}{$c}{contact8};
+          delete $$pms{contacts}{$c}{contact8};
 	}
-	delete $$pms{contacts}{$c}{contact2};
+        delete $$pms{contacts}{$c}{contact9} if defined $$pms{contacts}{$c}{contact9} && $$pms{contacts}{$c}{contact9} eq ''; # Empty work phone?
       }
 
       # Delete trailing empty contact fields
@@ -624,7 +600,7 @@ sub GetParentsEmail {
 	}
       }
       else {
-	print "Unknown field in $filename: '$f'\n";
+	print "Error: GetParentsEmail: Unknown field in $filename: '$f'\n";
       }
     }
     undef $fh;
@@ -719,10 +695,10 @@ sub RequestMissingGenerInformation {
   if (!-e $$pms{commonDataFile}) {
     my $fh = IO::File->new($$pms{commonDataFile}, "w");
     if (defined $fh) {
-	# File doesent exist, but openend for write
-	print $fh $file_header_example.$msg;
-	undef $fh;
-	return $missing;
+      # File doesent exist, but openend for write
+      print $fh $file_header_example.$msg;
+      undef $fh;
+      return $missing;
     }
   }
   elsif ($missing || $$pms{verbose}) {
@@ -732,7 +708,28 @@ sub RequestMissingGenerInformation {
   return $missing;
 }
 
-# Process contact info
+# Process contact info - split phone info, only valid delimiter is - (input check in Forældreintra)
+sub ProcessInfoSplitPhone {
+  my $pms = pop @_;
+
+  while (my ($k, $v) = each %{$$pms{contacts}}) {
+    # Process a contact
+    foreach my $person (qw(student parent1 parent2)) {
+      if (defined $$v{$person}) {
+	foreach my $e (keys $$v{$person}) {
+	  if ($e =~ m/^phone_/) {
+	    if ($$v{$person}{$e} =~ m/^([0-9]+)\-([0-9]+)$/) {
+              $$v{$person}{$e} = $1;
+              $$v{$person}{$e.'2'} = $2;
+	    }
+	  }
+	}
+      }
+    }
+  }
+}
+
+# Process contact info - Remove empty fields
 sub ProcessInfoRemoveEmptyFields {
   my $pms = pop @_;
 
@@ -854,6 +851,7 @@ N:'.SplitName(';', $c{name}, $studentNick.': ').';;'."\n";
       $vcard .= VcardAddFieldOptional({contact => \%c, pre => 'TEL;PID=1.1;TYPE=CELL:', post => '', field => 'phone_mob', type => 'phone'});
       $vcard .= VcardAddFieldOptional({contact => \%c, pre => 'TEL;PID=2.1;TYPE=HOME:', post => '', field => 'phone_home', type => 'phone'});
       $vcard .= VcardAddFieldOptional({contact => \%c, pre => 'TEL;PID=3.1;TYPE=CELL:', post => '', field => 'phone_mob2', type => 'phone'});
+      $vcard .= VcardAddFieldOptional({contact => \%c, pre => 'TEL;PID=4.1;TYPE=HOME:', post => '', field => 'phone_home2', type => 'phone'});
       $vcard .= VcardAddFieldOptional({contact => \%c, pre => 'BDAY:', post => '', field => 'birthday', type => 'date'});
       $vcard .= 'ORG;PID=1.1:'.$$pms{org}."\n" if defined $$pms{org};
       # Insert relations (parent<->child)
