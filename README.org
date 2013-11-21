@@ -93,6 +93,10 @@ klasser) oprettes forældrene flere gange - for lettere søgning.
 * Usage
 Info kommer.
 
+** Via Lærerintra (li)
+Kun testet som administrator
+- Vælg Admin -> Forældreintra -> Gå til ForældreIntras loginside
+
 * Import ex - 4*vcf
   :PROPERTIES:
   :CUSTOM_ID: ImportEx.vcf-split
