@@ -469,7 +469,7 @@ sub GetParentsContactInfo {
 
     # Fix contact info
     foreach my $c (keys $$pms{contacts}) {
-      if (defined $$pms{contacts}{$c}{contact7}) { # Assuming 2 parents with all or partial info (except work phone)
+      if (defined $$pms{contacts}{$c}{contact5}) { # Assuming 2 parents with all or partial info (except work phone)
 	# Assumes contact2 is parent2s name if non-empty and use + remove if seems ok
 	if ($$pms{contacts}{$c}{contact2} !~ m/^$/) { # !Empty field
 	  $$pms{contacts}{$c}{parent2}{name} = $$pms{contacts}{$c}{contact2};
@@ -492,41 +492,50 @@ sub GetParentsContactInfo {
 	  print STDERR "Warning: Expecting address for parent1 to $c, got: '$$pms{contacts}{$c}{contact3}' (no postal code)\n";
 	}
 
-	# Parsing contact4 and use + remove if seems ok
-	if ($$pms{contacts}{$c}{contact4} =~ m/^(.*?), ([0-9]{4} .*)$/) { # Contains 4 digit postal code
-	  $$pms{contacts}{$c}{parent2}{adr} = $1.", ".$2;
-	  delete $$pms{contacts}{$c}{contact4};
-	}
-	elsif ($$pms{contacts}{$c}{contact4} =~ m/^([0-9]{4} .*)$/) { # No address except Contains 4 digit postal code + town
-	  $$pms{contacts}{$c}{parent2}{adr} = $1;
-	  delete $$pms{contacts}{$c}{contact4};
-	}
-	elsif ($$pms{contacts}{$c}{contact4} =~ m/^$/) { # Empty field
-	  delete $$pms{contacts}{$c}{contact4};
-	}
-	else {
-	  print STDERR "Warning: Expecting address for parent2 to $c, got: '$$pms{contacts}{$c}{contact4}' (no postal code)\n";
-	}
+	if (defined $$pms{contacts}{$c}{contact7}) { # Assuming 2 parents with all or partial info - at least some info for parent2 (except work phone)
+	    # Parsing contact4 and use + remove if seems ok
+	    if ($$pms{contacts}{$c}{contact4} =~ m/^(.*?), ([0-9]{4} .*)$/) { # Contains 4 digit postal code
+		$$pms{contacts}{$c}{parent2}{adr} = $1.", ".$2;
+		delete $$pms{contacts}{$c}{contact4};
+	    }
+	    elsif ($$pms{contacts}{$c}{contact4} =~ m/^([0-9]{4} .*)$/) { # No address except Contains 4 digit postal code + town
+		$$pms{contacts}{$c}{parent2}{adr} = $1;
+		delete $$pms{contacts}{$c}{contact4};
+	    }
+	    elsif ($$pms{contacts}{$c}{contact4} =~ m/^$/) { # Empty field
+		delete $$pms{contacts}{$c}{contact4};
+	    }
+	    else {
+		print STDERR "Warning: Expecting address for parent2 to $c, got: '$$pms{contacts}{$c}{contact4}' (no postal code)\n";
+	    }
 
-        $$pms{contacts}{$c}{parent1}{phone_home} = $$pms{contacts}{$c}{contact5};
-        delete $$pms{contacts}{$c}{contact5};
+	    $$pms{contacts}{$c}{parent1}{phone_home} = $$pms{contacts}{$c}{contact5};
+	    delete $$pms{contacts}{$c}{contact5};
 
-        $$pms{contacts}{$c}{parent2}{phone_home}  = $$pms{contacts}{$c}{contact6};
-        delete $$pms{contacts}{$c}{contact6};
+	    $$pms{contacts}{$c}{parent2}{phone_home}  = $$pms{contacts}{$c}{contact6};
+	    delete $$pms{contacts}{$c}{contact6};
 
-        $$pms{contacts}{$c}{parent1}{phone_mob} = $$pms{contacts}{$c}{contact7};
-        delete $$pms{contacts}{$c}{contact7};
+	    $$pms{contacts}{$c}{parent1}{phone_mob} = $$pms{contacts}{$c}{contact7};
+	    delete $$pms{contacts}{$c}{contact7};
 
-	if (defined $$pms{contacts}{$c}{contact8}) {
-          $$pms{contacts}{$c}{parent2}{phone_mob}  = $$pms{contacts}{$c}{contact8};
-          delete $$pms{contacts}{$c}{contact8};
+	    if (defined $$pms{contacts}{$c}{contact8}) {
+		$$pms{contacts}{$c}{parent2}{phone_mob}  = $$pms{contacts}{$c}{contact8};
+		delete $$pms{contacts}{$c}{contact8};
+	    }
+	    delete $$pms{contacts}{$c}{contact9} if defined $$pms{contacts}{$c}{contact9} && $$pms{contacts}{$c}{contact9} eq ''; # Empty work phone?
 	}
-        delete $$pms{contacts}{$c}{contact9} if defined $$pms{contacts}{$c}{contact9} && $$pms{contacts}{$c}{contact9} eq ''; # Empty work phone?
+	else { # Assume no info for parent2
+	    $$pms{contacts}{$c}{parent1}{phone_home} = $$pms{contacts}{$c}{contact4};
+	    delete $$pms{contacts}{$c}{contact4};
+
+	    $$pms{contacts}{$c}{parent1}{phone_mob} = $$pms{contacts}{$c}{contact5};
+	    delete $$pms{contacts}{$c}{contact5};
+	}
       }
 
       # Delete trailing empty contact fields
     DELETE_EMPTY_CONTACTS:
-      for (my $i = 6; $i >= 2; $i--) {
+      for (my $i = 8; $i >= 1; $i--) {
 	if (defined $$pms{contacts}{$c}{"contact$i"}) {
 	  if ($$pms{contacts}{$c}{"contact$i"} eq '') {
 	    delete $$pms{contacts}{$c}{"contact$i"};
@@ -536,10 +545,18 @@ sub GetParentsContactInfo {
 	  }
 	}
       }
+
+      # Show unused contact# fields
+    SHOW_EMPTY_CONTACTS:
+      for (my $i = 1; $i <= 8; $i++) {
+	  if (defined $$pms{contacts}{$c}{"contact$i"}) {
+	      warn "Warning: Unused contact info for $c: {contact$i}='".$$pms{contacts}{$c}{"contact$i"}."'\n";
+	  }
+      }
     }
   }
   else {
-    $$pms{kl}{$entry} = '?';
+      $$pms{kl}{$entry} = '?';
   }
   # ### pms.contacts: $$pms{contacts}
 }
