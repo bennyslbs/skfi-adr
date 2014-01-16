@@ -273,6 +273,8 @@ sub GetStudentAdrPhone {
 
   my $filename = $$pms{opts}{in_file_base}.$$pms{cfg}{file_ending}{$entry};
   my $fh = IO::File->new($filename, "r");
+  my $nxt_line_name = '';
+  my $nxt_line_arg = 0;
   if (defined $fh) {
     my $active_section = 0;
   LINE:
@@ -294,11 +296,47 @@ sub GetStudentAdrPhone {
       elsif ($l =~ m/^ NAVN  	 ADRESSE 	 TELEFON 	 ELEVMOBIL  $/) {
 	# Headerline
       }
+      elsif ($nxt_line_arg > 0) { # Read the last content contd. from last line
+	if ($nxt_line_arg == 4 && $l =~ m/^([^\t]*)\t([^\t]*)$/) {
+	  $$pms{contacts}{$nxt_line_name}{student}{phone_extra} = trim($1);
+	  $$pms{contacts}{$nxt_line_name}{student}{phone_mob} = trim($2);
+	  $nxt_line_arg = 0;
+	}
+	elsif ($nxt_line_arg == 3 && $l =~ m/^([^\t]*)\t([^\t]*)$/) {
+	  $$pms{contacts}{$nxt_line_name}{student}{adr_extra} = trim($1);
+	  $$pms{contacts}{$nxt_line_name}{student}{phone_home} = trim($2);
+	  $nxt_line_arg = 5;
+	}
+	elsif ($nxt_line_arg == 5 && $l =~ m/^([^\t]*)\t([^\t]*)$/) {
+	  $$pms{contacts}{$nxt_line_name}{student}{phone_extra} = trim($1);
+	  $$pms{contacts}{$nxt_line_name}{student}{phone_mob} = trim($2);
+	  $nxt_line_arg = 0;
+	}
+	else {
+	  print "Error: GetStudentAdrPhone: Error parsing line in $filename: '$l' - Not supported with more than one field on 'line2'\n";
+	  $nxt_line_arg = 0;
+	}
+      }
       elsif ($l =~ m/^([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)$/) { # 4 fields with tabs between
 	$$pms{contacts}{trim($1)}{student}{name} = trim($1); # Store student name twice
 	$$pms{contacts}{trim($1)}{student}{adr} = trim($2);
 	$$pms{contacts}{trim($1)}{student}{phone_home} = trim($3);
 	$$pms{contacts}{trim($1)}{student}{phone_mob} = trim($4);
+      }
+      elsif ($l =~ m/^([^\t]*)\t([^\t]*)\t([^\t]*)$/) { # 3 fields with tabs between
+	# 4th arg on next line
+	$nxt_line_name=trim($1);
+	$nxt_line_arg=4;
+	$$pms{contacts}{trim($1)}{student}{name} = trim($1); # Store student name twice
+	$$pms{contacts}{trim($1)}{student}{adr} = trim($2);
+	$$pms{contacts}{trim($1)}{student}{phone_home} = trim($3);
+      }
+      elsif ($l =~ m/^([^\t]*)\t([^\t]*)$/) { # 2 fields with tabs between
+	# 4th arg on next line
+	$nxt_line_name=trim($1);
+	$nxt_line_arg=3;
+	$$pms{contacts}{trim($1)}{student}{name} = trim($1); # Store student name twice
+	$$pms{contacts}{trim($1)}{student}{adr} = trim($2);
       }
       else {
 	print "Error: GetStudentAdrPhone: Unknown line in $filename: '$l'\n";
@@ -797,7 +835,8 @@ sub ProcessInfoCombine {
     # Create {proc}{common}{adr} if only one adr is listed
     my ($adr_key, $adr_detils) = each %{$$v{proc}{adr}};
     if (keys %{$$v{proc}{adr}} == 1) {
-      $$v{proc}{common}{adr} = $adr_key;
+      # FixMe: adr_extra is not checked below! - but the common field is not used
+      #$$v{proc}{common}{adr} = $adr_key;
     }
   }
 }
@@ -865,10 +904,11 @@ N:'.SplitName(';', $c{name}, $studentNick.': ').';;'."\n";
       $vcard .= VcardAddFieldOptional({contact => \%c, pre => 'EMAIL;PID=1.1;TYPE=WORK:', post => '', field => 'email_work'});
       $vcard .= VcardAddFieldOptional({contact => \%c, pre => 'EMAIL;PID=2.1;TYPE=HOME:', post => '', field => 'email'});
       $vcard .= VcardAddFieldOptional({contact => \%c, pre => 'ADR;PID=1.1;TYPE=HOME:', post => '', field => 'adr', type => 'adr'});
+      $vcard .= VcardAddFieldOptional({contact => \%c, pre => 'ADR;PID=2.1;TYPE=HOME:', post => '', field => 'adr_extra', type => 'adr'});
       $vcard .= VcardAddFieldOptional({contact => \%c, pre => 'TEL;PID=1.1;TYPE=CELL:', post => '', field => 'phone_mob', type => 'phone'});
       $vcard .= VcardAddFieldOptional({contact => \%c, pre => 'TEL;PID=2.1;TYPE=HOME:', post => '', field => 'phone_home', type => 'phone'});
       $vcard .= VcardAddFieldOptional({contact => \%c, pre => 'TEL;PID=3.1;TYPE=CELL:', post => '', field => 'phone_mob2', type => 'phone'});
-      $vcard .= VcardAddFieldOptional({contact => \%c, pre => 'TEL;PID=4.1;TYPE=HOME:', post => '', field => 'phone_home2', type => 'phone'});
+      $vcard .= VcardAddFieldOptional({contact => \%c, pre => 'TEL;PID=4.1;TYPE=HOME:', post => '', field => 'phone_extra', type => 'phone'});
       $vcard .= VcardAddFieldOptional({contact => \%c, pre => 'BDAY:', post => '', field => 'birthday', type => 'date'});
       $vcard .= 'ORG;PID=1.1:'.$$pms{org}."\n" if defined $$pms{org};
       # Insert relations (parent<->child)
@@ -891,7 +931,8 @@ N:'.SplitName(';', $c{name}, $studentNick.': ').';;'."\n";
       }
 
       $vcard .= "SOURCE;PID=1.1:skfi-adr\n";
-      $vcard .= "REV:".POSIX::strftime('%Y%m%dT%H%M%S%z', localtime($$pms{modTime}{max}))."\n";
+      # Skip time from time stamp, or include:"%H%M%S%z" on the line below instead of the zeros.
+      $vcard .= "REV:".POSIX::strftime('%Y%m%dT000000+0000', localtime($$pms{modTime}{max}))."\n";
       $vcard .= 'NOTE:';
       # Write note about wher the data comes from
       $vcard .= 'Data hentet fra forældreintra d. ';
