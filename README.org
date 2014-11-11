@@ -38,6 +38,10 @@
 *** Afhængigheder
     perl5 + krævede libs.
 
+Nogle krævede pakker:
+ sudo apt-get install libsmart-comments-perl 
+ sudo apt-get install libfile-slurp-perl 
+
 * Eksportformater og brug
   :PROPERTIES:
   :CUSTOM_ID: Formater-Brug
