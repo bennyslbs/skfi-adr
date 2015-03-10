@@ -1,4 +1,4 @@
-#+TITLE:	README for skfi-adr
+#+TITLE:	skfi-adr - forældreintra -> adressekartotek
 #+AUTHOR:	Benny Simonsen
 #+EMAIL:	benny@slbs.dk
 #+STARTUP:	content
@@ -8,34 +8,43 @@
   :CUSTOM_ID: Overview
   :END:
 
-  skfi-adr er et lille tool til at få kontaktinformation fra
-  FORÆLDREINTRA © Skolesoft ind i adressekartoteker i mailklienter m.v.
+skfi-adr er et lille tool til at få kontaktinformation fra
+Forældreintra © Skolesoft ind i adressekartoteker i mailklienter m.v.
 
-  Input til skfi-adr: Copy paste af diverse klasselister i
-  Forældreintra. Flg. lister bruges:
-  - Navneliste (evt.)
-  - Adresse- og telefonliste
-  - Elevernes e-mailadresser
-  - Elevernes fødselsdage
-  - Kontaktoplysninger
-  - Forældres e-mailadresser
-  - Forældres profilbilleder (evt. - Blot til at få navne på forældre)
+Input til skfi-adr: Copy paste af diverse klasselister i
+Forældreintra. Flg. lister bruges:
+- Navneliste (evt.)
+- Adresse- og telefonliste
+- Elevernes e-mailadresser
+- Elevernes fødselsdage
+- Kontaktoplysninger
+- Forældres e-mailadresser
+- Forældres profilbilleder (evt. - Blot til at få navne på forældre)
 
-  Data gemmes internt på format så forskellige eksport formater er
-  lette at lave.
+Data gemmes internt på format så forskellige eksport formater er
+lette at lave.
 
-  Nuværende eksport [[#Formater-Brug][formater]]:
-  - [[#Formater-Brug.vcf-split][vcf-split]] - 4 vcard filer med drenge/piger, forældre t. drenge/piger]
+Nuværende eksport [[#Formater-Brug][formater]]:
+- [[#Formater-Brug.vcf-split][vcf-split]] - 4 vcard filer med drenge/piger, forældre t. drenge/piger]
 
+Husk: Informationen opdateres ikke automatisk, når det bliver ændret
+på Forældreintra.
+
+Derfor vil en besked til klassen ved ændring af oplysninger (især
+vigtigt information som adresse, tlf, email) vil være at foretrække,
+så man stadig er let at finde frem til.
 
 * Installation
   :PROPERTIES:
   :CUSTOM_ID: Installation
   :END:
 
-  Download skfi-adr.pl fra file:./skfi-adr.pl
+Download skfi-adr.pl fra file:./skfi-adr.pl
 
 *** Afhængigheder
+  :PROPERTIES:
+  :CUSTOM_ID: Installation.depend
+  :END:
     perl5 + krævede libs.
 
 Nogle krævede pakker:
@@ -95,9 +104,15 @@ Hvis der er flere søskende (enten i samme klasse, eller flere
 klasser) oprettes forældrene flere gange - for lettere søgning.
 
 * Usage
+  :PROPERTIES:
+  :CUSTOM_ID: Usage
+  :END:
 Info kommer.
 
 ** Via Lærerintra (li)
+  :PROPERTIES:
+  :CUSTOM_ID: Export.li
+  :END:
 Kun testet som administrator
 - Vælg Admin -> Forældreintra -> Gå til ForældreIntras loginside
 
@@ -120,55 +135,59 @@ Steps:
 
 Dette gøres ved:
 
-1: Backup (eksporter) - følg guide:
-   https://support.google.com/mail/answer/24911?hl=da
-2: Gå ind på http://gmail.com
-3: Vælg Kontaktpersoner (Pil ned ved t.h. for Email)
-4: For hver af de 4 .vcf filer der er pr. klasse følges denne vejledning:
-   A: Tryk på "Mere" knappen over listen med kontaktpersoner
-   B: Vælg "Importer ..."
-   C: Vælg "Browse"
-   D: Browse frem til en af .vcf filerne, og vælg "open" (Kan hedde
-      forskelligt afhængig af operativ system.
-   E: Vælg Importer
-   F: Vent et øjeblik, og der er kommet en ny gruppe
-      "Importeret DD/MM/YY" (evt. med nr. efter hvis gruppen allerede findes)
-   G: Klik på den nye gruppe
-   H: Over kontakterne er der en lyserød bar m. bla. mulighed for at
-      klikke på: "Find og flet dobbelte forekomster" - Vælg dette
-      ... og:
-   I: Fjern fluebenet ud for Navn (Alle flueben forsvinder)
-   J: Vælg "Flet" (Der flettes ikke, men Gmail marker at kontakterne er flettet)
-   K: Omdøb gruppen til sigende navn efter eget ønske, eks. Peters
-      kl. D F (Der bliver 4 grupper for klassen: Drenge, piger,
-      forældre t. Drenge, forældre til piger)
-      Vælg "Mere" -> "Omdøb gruppe"
-5: Vent noget tid, og du vil se kalenderen synkroniseret med evt. Android
-   Smartphones der synkroniserer med denne gmail konto.
-   Først bliver grupperne synlige på telefonen, og efter noget tid
-   indeholder grupperne også kontakter.
-   Hvis tålmodigheden slipper op:
-   Vælg indstillinger->Konti->Google->Synk. alle (på smartphonen).
-6: Android 4.1's "Kontakter" app forsøger at flette kontakterne (på basis
-   af fælles telefonnumre, email mv. Dette bør slås fra (efter min
-   mening), og gøres således (langsomt, så hvis nogen finder en
-   lettere måde, hører jeg gerne):
-   A: For hver kontakt gøres flg.
-      Det anbefales at gå systematisk frem, der er kun ca. 60 kontaker
-      for en klasse :). Det lader til at det er nok at gå igennem listen
-      med kontaker en gang, men kontakter kan hoppe til andet sted
-      når de bliver adskilt.
-      a: Rul ned til "Forbindelse"
-      b: Hvis der er flere Google-logoer (Blå firkant med g i),
-         klikkes der på linien med logoerne
-      c: Klik på ringen med (-) ud for en af kontakterne, vælg Ok
-         Det er underordnet hvilken man vælger.
-      d: Gentages indtil der kun er een kontakt (og et google-logo)
+- Backup (eksporter) - følg guide:
+  https://support.google.com/mail/answer/24911?hl=da
+- Gå ind på http://gmail.com
+- Vælg Kontaktpersoner (Pil ned ved t.h. for Email)
+- For hver af de 4 .vcf filer der er pr. klasse følges denne vejledning:
+  - Tryk på "Mere" knappen over listen med kontaktpersoner
+  - Vælg "Importer ..."
+  - Vælg "Browse"
+  - Browse frem til en af .vcf filerne, og vælg "open" (Kan hedde
+    forskelligt afhængig af operativ system.
+  - Vælg Importer
+  - Vent et øjeblik, og der er kommet en ny gruppe
+    "Importeret DD/MM/YY" (evt. med nr. efter hvis gruppen allerede findes)
+  - Klik på den nye gruppe
+  - Over kontakterne er der en lyserød bar m. bla. mulighed for at
+    klikke på: "Find og flet dobbelte forekomster" - Vælg dette
+    ... og:
+  - Fjern fluebenet ud for Navn (Alle flueben forsvinder)
+  - Vælg "Flet" (Der flettes ikke, men Gmail marker at kontakterne er flettet)
+  - Omdøb gruppen til sigende navn efter eget ønske, eks. Peters
+    kl. D F (Der bliver 4 grupper for klassen: Drenge, piger,
+    forældre t. Drenge, forældre til piger)
+    - Vælg "Mere" -> "Omdøb gruppe"
+- Vent noget tid, og du vil se kalenderen synkroniseret med evt. Android
+  Smartphones der synkroniserer med denne gmail konto.
+  Først bliver grupperne synlige på telefonen, og efter noget tid
+  indeholder grupperne også kontakter.
 
-   Hvis ikke dette punkt gennemføres ser listerne mangelfulde og
-   forkerte ud. F. eks kan det ske at listen med elever mangler
-   eleven, eller en af forældrenes navne står der istedet. og
-   tilsvarende i grupperne med forældre.
+  Hvis tålmodigheden slipper op:
+  Vælg indstillinger->Konti->Google->Synk. alle (på smartphonen).
+- Android 4.1's "Kontakter" app forsøger at flette kontakterne (på basis
+  af fælles telefonnumre, email mv. Dette bør slås fra (efter min
+  mening), og gøres således (langsomt, så hvis nogen finder en
+  lettere måde, hører jeg gerne):
+  - For hver kontakt gøres flg.
+    Det anbefales at gå systematisk frem, der er kun ca. 60 kontaker
+    for en klasse :). Det lader til at det er nok at gå igennem listen
+    med kontaker en gang, men kontakter kan hoppe til andet sted
+    når de bliver adskilt.
+    - Rul ned til "Forbindelse"
+    - Hvis der er flere Google-logoer (Blå firkant med g i),
+      klikkes der på linien med logoerne
+    - Klik på ringen med (-) ud for en af kontakterne, vælg Ok
+      Det er underordnet hvilken man vælger.
+    - Gentages indtil der kun er een kontakt (og et google-logo)
+
+  Hvis ikke dette punkt gennemføres ser listerne mangelfulde og
+  forkerte ud. F. eks kan det ske at listen med elever mangler
+  eleven, eller en af forældrenes navne står der istedet. og
+  tilsvarende i grupperne med forældre.
+- Backup (eksporter) igen - så vil det være lettere at finde frem til
+  ændringer man evt. har lavet i kontakterne næste gang der kommer en
+  opdatering.
    
 ** Android
   :PROPERTIES:
